@@ -1,13 +1,26 @@
 {
-  "name": "Agent Zero Dev Container",
+  "name": "Agent Zero Development Environment",
   "dockerFile": "Dockerfile",
   "settings": {
-    "terminal.integrated.shell.linux": "/bin/bash"
+    "terminal.integrated.defaultProfile.linux": "bash",
+    "terminal.integrated.profiles.linux": {
+      "bash": {
+        "path": "/bin/bash"
+      }
+    },
+    "python.defaultInterpreterPath": "/opt/venv/bin/python",
+    "python.linting.enabled": true,
+    "python.linting.pylintEnabled": true
   },
   "extensions": [
     "ms-python.python",
-    "ms-azuretools.vscode-docker"
+    "ms-python.vscode-pylance",
+    "ms-azuretools.vscode-docker",
+    "yzhang.markdown-all-in-one"
   ],
   "postCreateCommand": "pip install -r requirements.txt",
-  "remoteUser": "vscode"
+  "remoteUser": "vscode",
+  "forwardPorts": [80],
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/a0,type=bind",
+  "workspaceFolder": "/workspaces/a0"
 }
