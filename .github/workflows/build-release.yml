@@ -1,0 +1,163 @@
+name: Build and Release Electron App
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+        
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        # Install minimal dependencies for build - full install will happen at runtime
+        pip install flask flask-basicauth python-dotenv
+        
+    - name: Install Node.js dependencies
+      run: npm ci
+      
+    - name: Build Electron app (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: npm run build-linux
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Build Electron app (Windows)
+      if: matrix.os == 'windows-latest'
+      run: npm run build-win
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Build Electron app (macOS)
+      if: matrix.os == 'macos-latest'
+      run: npm run build-mac
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        CSC_IDENTITY_AUTO_DISCOVERY: false  # Disable code signing for now
+        
+    - name: Upload artifacts (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: agent-zero-linux
+        path: |
+          dist/*.AppImage
+          dist/*.snap
+          
+    - name: Upload artifacts (Windows)
+      if: matrix.os == 'windows-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: agent-zero-windows
+        path: dist/*.exe
+        
+    - name: Upload artifacts (macOS)
+      if: matrix.os == 'macos-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: agent-zero-macos
+        path: dist/*.dmg
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts/
+        
+    - name: Display structure of downloaded files
+      run: ls -R artifacts/
+      
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.event.inputs.version || github.ref_name }}
+        release_name: Agent Zero ${{ github.event.inputs.version || github.ref_name }}
+        body: |
+          # Agent Zero Desktop App Release
+          
+          ## Downloads
+          - **Windows**: Download the `.exe` installer
+          - **macOS**: Download the `.dmg` file
+          - **Linux**: Download the `.AppImage` or `.snap` package
+          
+          ## Installation
+          - **Windows**: Run the installer and follow the setup wizard
+          - **macOS**: Open the DMG file and drag Agent Zero to Applications
+          - **Linux**: Make the AppImage executable with `chmod +x` and run it, or install the snap package
+          
+          ## What's New
+          - Desktop application wrapper for Agent Zero
+          - Cross-platform support (Windows, macOS, Linux)
+          - Embedded Python server for seamless experience
+          
+          For full documentation, visit: https://github.com/frdel/agent-zero
+        draft: false
+        prerelease: false
+        
+    - name: Upload Linux AppImage
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: artifacts/agent-zero-linux/*.AppImage
+        asset_name: Agent-Zero-Linux.AppImage
+        asset_content_type: application/octet-stream
+        
+    - name: Upload Windows Installer
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: artifacts/agent-zero-windows/*.exe
+        asset_name: Agent-Zero-Windows-Setup.exe
+        asset_content_type: application/octet-stream
+        
+    - name: Upload macOS DMG
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: artifacts/agent-zero-macos/*.dmg
+        asset_name: Agent-Zero-macOS.dmg
+        asset_content_type: application/octet-stream

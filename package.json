@@ -1,0 +1,96 @@
+{
+  "name": "agent-zero",
+  "version": "1.0.0",
+  "description": "Agent Zero Desktop App",
+  "main": "electron/main.js",
+  "homepage": "./",
+  "scripts": {
+    "electron": "electron . --no-sandbox",
+    "electron-dev": "ELECTRON_ENV=development electron . --no-sandbox",
+    "build": "electron-builder",
+    "build-win": "electron-builder --win",
+    "build-mac": "electron-builder --mac",
+    "build-linux": "electron-builder --linux",
+    "build-all": "electron-builder --win --mac --linux",
+    "dist": "npm run build",
+    "pack": "electron-builder --dir",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "build": {
+    "appId": "com.agentzero.app",
+    "productName": "Agent Zero",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "electron/**/*",
+      "webui/**/*",
+      "python/**/*",
+      "prompts/**/*",
+      "instruments/**/*",
+      "knowledge/**/*",
+      "lib/**/*",
+      "*.py",
+      "requirements.txt",
+      "example.env"
+    ],
+    "extraResources": [
+      {
+        "from": "python",
+        "to": "python"
+      },
+      {
+        "from": "requirements.txt",
+        "to": "requirements.txt"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ]
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "category": "public.app-category.developer-tools"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": ["x64"]
+        },
+        {
+          "target": "snap",
+          "arch": ["x64"]
+        }
+      ],
+      "category": "Development"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  },
+  "devDependencies": {
+    "electron": "^28.2.0",
+    "electron-builder": "^24.9.1"
+  },
+  "dependencies": {
+    "cross-spawn": "^7.0.3",
+    "find-free-port": "^2.0.0"
+  },
+  "author": "Agent Zero Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/K-Oz/a0.git"
+  }
+}
