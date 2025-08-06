@@ -30,9 +30,10 @@ jobs:
         cache: 'npm'
         
     - name: Setup Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.12'
+        cache: 'pip'
         
     - name: Install Python dependencies
       run: |
@@ -43,6 +44,11 @@ jobs:
     - name: Install Node.js dependencies
       run: npm ci
       
+    - name: Install Snapcraft (Linux only)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo snap install snapcraft --classic
+        
     - name: Build Electron app (Linux)
       if: matrix.os == 'ubuntu-latest'
       run: npm run build-linux
@@ -89,6 +95,8 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: write
     
     steps:
     - name: Checkout code
@@ -102,20 +110,29 @@ jobs:
     - name: Display structure of downloaded files
       run: ls -R artifacts/
       
+    - name: Prepare release assets
+      run: |
+        mkdir -p release/
+        # Find and copy Linux artifacts
+        find artifacts/agent-zero-linux -name "*.AppImage" -exec cp {} release/Agent-Zero-Linux.AppImage \; 2>/dev/null || true
+        find artifacts/agent-zero-linux -name "*.snap" -exec cp {} release/ \; 2>/dev/null || true
+        # Find and copy Windows artifacts  
+        find artifacts/agent-zero-windows -name "*.exe" -exec cp {} release/Agent-Zero-Windows-Setup.exe \; 2>/dev/null || true
+        # Find and copy macOS artifacts
+        find artifacts/agent-zero-macos -name "*.dmg" -exec cp {} release/Agent-Zero-macOS.dmg \; 2>/dev/null || true
+        ls -la release/
+        
     - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      uses: ncipollo/create-release@v1
       with:
-        tag_name: ${{ github.event.inputs.version || github.ref_name }}
-        release_name: Agent Zero ${{ github.event.inputs.version || github.ref_name }}
+        tag: ${{ github.event.inputs.version || github.ref_name }}
+        name: Agent Zero ${{ github.event.inputs.version || github.ref_name }}
         body: |
           # Agent Zero Desktop App Release
           
           ## Downloads
           - **Windows**: Download the `.exe` installer
-          - **macOS**: Download the `.dmg` file
+          - **macOS**: Download the `.dmg` file  
           - **Linux**: Download the `.AppImage` or `.snap` package
           
           ## Installation
@@ -128,36 +145,8 @@ jobs:
           - Cross-platform support (Windows, macOS, Linux)
           - Embedded Python server for seamless experience
           
-          For full documentation, visit: https://github.com/frdel/agent-zero
+          For full documentation, visit: https://github.com/K-Oz/a0
         draft: false
         prerelease: false
-        
-    - name: Upload Linux AppImage
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: artifacts/agent-zero-linux/*.AppImage
-        asset_name: Agent-Zero-Linux.AppImage
-        asset_content_type: application/octet-stream
-        
-    - name: Upload Windows Installer
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: artifacts/agent-zero-windows/*.exe
-        asset_name: Agent-Zero-Windows-Setup.exe
-        asset_content_type: application/octet-stream
-        
-    - name: Upload macOS DMG
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: artifacts/agent-zero-macos/*.dmg
-        asset_name: Agent-Zero-macOS.dmg
-        asset_content_type: application/octet-stream
+        artifacts: "release/*"
+        token: ${{ secrets.GITHUB_TOKEN }}
