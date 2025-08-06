@@ -112,6 +112,18 @@ docker run -p 50001:80 frdel/agent-zero-run
 # Visit http://localhost:50001 to start
 ```
 
+### 🖥️ Desktop App
+
+Download the desktop application for your platform:
+
+- **Windows**: Download and run the `.exe` installer from [releases](https://github.com/K-Oz/a0/releases)
+- **macOS**: Download the `.dmg` file from [releases](https://github.com/K-Oz/a0/releases)
+- **Linux**: Download the `.AppImage` or `.snap` from [releases](https://github.com/K-Oz/a0/releases)
+
+The desktop app includes everything needed to run Agent Zero locally with a native interface.
+
+For desktop app documentation, see [ELECTRON.md](./ELECTRON.md).
+
 - Developers and contributors: download the full binaries for your system from the [releases page](https://github.com/frdel/agent-zero/releases) and then follow the instructions [provided here](./docs/installation.md#in-depth-guide-for-full-binaries-installation).
 
 ## 🐳 Fully Dockerized, with Speech-to-Text and TTS

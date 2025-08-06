@@ -47,3 +47,9 @@ instruments/**
 # Global rule to include .gitkeep files anywhere
 !**/.gitkeep
 agent_history.gif
+
+# Electron build artifacts
+dist/
+node_modules/
+*.log
+.npm/
