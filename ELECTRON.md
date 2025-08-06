@@ -106,9 +106,17 @@ git push origin v1.0.0
 ```
 
 This triggers the build workflow which:
-1. Builds binaries for all platforms
-2. Creates a GitHub release
-3. Uploads the distribution files
+1. Sets up cross-platform build environments (Ubuntu, Windows, macOS)
+2. Installs dependencies with caching for faster builds
+3. Builds binaries for all platforms (Linux AppImage/Snap, Windows NSIS, macOS DMG)
+4. Creates a GitHub release with automated asset upload
+5. Uploads the distribution files with proper naming
+
+The workflow also supports manual triggering via the GitHub Actions UI for custom version releases.
+
+### Workflow Validation
+
+The repository includes automated validation of GitHub Actions workflow files to ensure syntax correctness and catch errors early. This validation runs automatically when workflow files are modified.
 
 ## Configuration
 
